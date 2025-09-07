@@ -90,7 +90,7 @@ make info          # Show environment information
 ## Manual Installation & Setup
 
 ### Prerequisites
-- Python 3.8+
+- Python 3.10+
 - **uv** (recommended) or pip for Python package management
 - Node.js 16+
 - npm or yarn

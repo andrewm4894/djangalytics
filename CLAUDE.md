@@ -210,3 +210,5 @@ The project uses comprehensive linting and formatting tools:
 - Database indexes optimized for common query patterns
 
 This project demonstrates real-world patterns for building analytics platforms with proper authentication, rate limiting, and multi-source event tracking.
+
+**Requirements**: Python 3.10+ and uv for modern package management.
