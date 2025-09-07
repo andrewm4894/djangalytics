@@ -5,29 +5,80 @@ from django.db.models import Count
 from django.db.models.functions import TruncDate
 from django.utils import timezone
 from datetime import timedelta
-from .models import Event
+from .models import Event, Project
 from .serializers import EventCreateSerializer, EventSerializer
+from .utils import check_ip_rate_limit, check_project_rate_limit
 
 @api_view(['POST'])
 def capture_event(request):
-    serializer = EventCreateSerializer(data=request.data)
-    if serializer.is_valid():
-        event = serializer.save()
+    # Check IP-based rate limiting first (100 requests per minute per IP)
+    ip_allowed, ip_count, ip_limit = check_ip_rate_limit(request, limit_per_minute=100)
+    if not ip_allowed:
         return Response({
-            'id': event.id,
-            'event_name': event.event_name,
-            'timestamp': event.timestamp,
-            'message': 'Event captured successfully'
-        }, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            'error': 'Rate limit exceeded for IP address',
+            'current_count': ip_count,
+            'limit': ip_limit,
+            'retry_after': '60 seconds'
+        }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+    
+    # Validate the event data
+    serializer = EventCreateSerializer(data=request.data, context={'request': request})
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Get the project for project-based rate limiting
+    api_key = request.data.get('api_key')
+    try:
+        project = Project.objects.get(api_key=api_key, is_active=True)
+    except Project.DoesNotExist:
+        return Response({'error': 'Invalid API key'}, status=status.HTTP_401_UNAUTHORIZED)
+    
+    # Check project-based rate limiting
+    project_allowed, project_count, project_limit = check_project_rate_limit(project)
+    if not project_allowed:
+        return Response({
+            'error': f'Rate limit exceeded for project {project.name}',
+            'current_count': project_count,
+            'limit': project_limit,
+            'retry_after': '60 seconds'
+        }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+    
+    # Save the event
+    event = serializer.save()
+    
+    return Response({
+        'id': event.id,
+        'event_name': event.event_name,
+        'timestamp': event.timestamp,
+        'user_id': event.user_id,
+        'session_id': event.session_id,
+        'ip_address': event.ip_address,
+        'user_agent': event.user_agent[:100] + '...' if len(event.user_agent) > 100 else event.user_agent,
+        'rate_limit_info': {
+            'ip_usage': f'{ip_count}/{ip_limit}',
+            'project_usage': f'{project_count}/{project_limit}'
+        },
+        'message': 'Event captured successfully'
+    }, status=status.HTTP_201_CREATED)
 
 @api_view(['GET'])
 def get_stats(request):
+    # Optional project filtering via API key
+    api_key = request.GET.get('api_key')
+    queryset = Event.objects.all()
+    
+    if api_key:
+        try:
+            project = Project.objects.get(api_key=api_key, is_active=True)
+            queryset = queryset.filter(project=project)
+        except Project.DoesNotExist:
+            return Response({'error': 'Invalid API key'}, status=status.HTTP_401_UNAUTHORIZED)
+    
     # Get events from the last 7 days
     seven_days_ago = timezone.now() - timedelta(days=7)
     
     # Aggregate events by date and event name
-    daily_stats = Event.objects.filter(
+    daily_stats = queryset.filter(
         timestamp__gte=seven_days_ago
     ).extra(
         select={'date': "date(timestamp)"}
@@ -36,17 +87,17 @@ def get_stats(request):
     ).order_by('date', 'event_name')
     
     # Get total event counts by event name
-    event_counts = Event.objects.values('event_name').annotate(
+    event_counts = queryset.values('event_name').annotate(
         count=Count('id')
     ).order_by('-count')
     
     # Get event counts by source
-    source_counts = Event.objects.values('source').annotate(
+    source_counts = queryset.values('source').annotate(
         count=Count('id')
     ).order_by('-count')
     
     # Get recent events for live feed
-    recent_events = Event.objects.all()[:20]
+    recent_events = queryset.order_by('-timestamp')[:20]
     recent_events_data = EventSerializer(recent_events, many=True).data
     
     return Response({
@@ -54,11 +105,22 @@ def get_stats(request):
         'event_counts': list(event_counts),
         'source_counts': list(source_counts),
         'recent_events': recent_events_data,
-        'total_events': Event.objects.count()
+        'total_events': queryset.count()
     })
 
 @api_view(['GET'])
 def get_events(request):
-    events = Event.objects.all()[:50]  # Last 50 events
+    # Optional project filtering via API key
+    api_key = request.GET.get('api_key')
+    queryset = Event.objects.all()
+    
+    if api_key:
+        try:
+            project = Project.objects.get(api_key=api_key, is_active=True)
+            queryset = queryset.filter(project=project)
+        except Project.DoesNotExist:
+            return Response({'error': 'Invalid API key'}, status=status.HTTP_401_UNAUTHORIZED)
+    
+    events = queryset.order_by('-timestamp')[:50]  # Last 50 events
     serializer = EventSerializer(events, many=True)
     return Response(serializer.data)

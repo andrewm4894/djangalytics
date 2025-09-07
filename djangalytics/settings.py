@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -125,9 +126,27 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# CORS settings for frontend
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # React development server
+# CORS settings for analytics system
+# Simple approach: Allow all origins, secure with project keys instead
+CORS_ALLOW_ALL_ORIGINS = True
+
+# Why this is safe for analytics:
+# 1. Analytics data is typically public-facing anyway
+# 2. We'll add project key authentication for security
+# 3. Rate limiting will prevent abuse
+# 4. This is how Google Analytics, Mixpanel, etc. work
+
+# Additional CORS headers for analytics
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
 ]
 
 # REST Framework settings
