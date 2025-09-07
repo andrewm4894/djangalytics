@@ -25,6 +25,7 @@ A full-stack Django and React application that mimics the core functionality of 
 - **Django REST Framework** - API development
 - **SQLite** - Database (for development)
 - **django-cors-headers** - CORS handling
+- **uv** - Fast Python package management
 
 ### Frontend
 - **React 18** - Frontend framework
@@ -90,6 +91,7 @@ make info          # Show environment information
 
 ### Prerequisites
 - Python 3.8+
+- **uv** (recommended) or pip for Python package management
 - Node.js 16+
 - npm or yarn
 - Make (optional, for using Makefile commands)
@@ -97,25 +99,26 @@ make info          # Show environment information
 ### Backend Setup
 
 1. **Clone the repository** (if not already done)
-2. **Create and activate virtual environment**:
+2. **Install Python dependencies with uv (recommended)**:
+   ```bash
+   uv sync
+   ```
+   
+   Or with pip:
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\\Scripts\\activate
-   ```
-
-3. **Install Python dependencies**:
-   ```bash
    pip install django djangorestframework django-cors-headers
    ```
 
-4. **Run database migrations**:
+3. **Run database migrations**:
    ```bash
-   python manage.py migrate
+   uv run python manage.py migrate
    ```
 
-5. **Start Django development server**:
+4. **Start Django development server**:
    ```bash
-   python manage.py runserver
+   uv run python manage.py runserver
    ```
    The backend will be available at `http://localhost:8000`
 

@@ -1,0 +1,28 @@
+[flake8]
+max-line-length = 100
+exclude = 
+    venv,
+    */migrations/*,
+    */node_modules/*,
+    build,
+    dist,
+    __pycache__,
+    *.pyc,
+    .git,
+    .tox,
+    .coverage,
+    htmlcov,
+    */static/*
+
+# Error codes to ignore
+ignore = 
+    E203,  # whitespace before ':'
+    W503,  # line break before binary operator
+    E501,  # line too long (handled by black)
+
+per-file-ignores =
+    */settings.py:E501,F401
+    */tests/*.py:E501
+    manage.py:E402
+
+max-complexity = 10

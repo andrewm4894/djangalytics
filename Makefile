@@ -1,7 +1,7 @@
 # Djangalytics Makefile
 # Common commands for development and testing
 
-.PHONY: help setup install start stop test test-backend test-frontend clean lint format docker
+.PHONY: help setup install install-dev start stop test test-backend test-frontend clean lint lint-fix format format-check docker
 
 # Default target
 help:
@@ -10,6 +10,7 @@ help:
 	@echo "Available commands:"
 	@echo "  setup          - Initial project setup (install dependencies)"
 	@echo "  install        - Install all dependencies"
+	@echo "  install-dev    - Install development dependencies (linters, formatters)"
 	@echo "  start          - Start both backend and frontend servers"
 	@echo "  start-backend  - Start Django development server"
 	@echo "  start-frontend - Start React development server"
@@ -19,8 +20,11 @@ help:
 	@echo "  test           - Run all tests (backend + frontend)"
 	@echo "  test-backend   - Run Django tests only"
 	@echo "  test-frontend  - Run React tests only"
-	@echo "  lint           - Run linting on all code"
-	@echo "  format         - Format code (if formatters are installed)"
+	@echo "  lint           - Run linting on all code (flake8 + eslint)"
+	@echo "  lint-fix       - Run linters with auto-fix where possible"
+	@echo "  format         - Format code with black + prettier"
+	@echo "  format-check   - Check code formatting without making changes"
+	@echo "  pre-commit     - Install and setup pre-commit hooks"
 	@echo "  clean          - Clean up generated files"
 	@echo "  migrate        - Run Django database migrations"
 	@echo "  seed-data      - Generate sample event data"
@@ -29,7 +33,7 @@ help:
 	@echo "  start-hedgehog - Start Flappy Hedgehog game demo app"
 	@echo "  start-games    - Start both games on separate ports"
 	@echo "  start-all      - Start analytics + frontend + both games"
-	@echo "  requirements   - Update requirements file"
+	@echo "  lock           - Update uv.lock file"
 	@echo "  docker-build   - Build Docker images"
 	@echo "  docker-up      - Start with Docker Compose"
 
@@ -40,11 +44,14 @@ setup: install migrate
 
 install: install-backend install-frontend
 
+install-dev: install-backend install-frontend
+	@echo "🛠️  Installing development dependencies with uv..."
+	uv sync --dev
+	cd frontend && npm install --save-dev prettier
+
 install-backend:
-	@echo "📦 Installing Python dependencies..."
-	python -m venv venv || python3 -m venv venv
-	./venv/bin/pip install --upgrade pip
-	./venv/bin/pip install django djangorestframework django-cors-headers requests
+	@echo "📦 Installing Python dependencies with uv..."
+	uv sync
 
 install-frontend:
 	@echo "📦 Installing Node.js dependencies..."
@@ -60,8 +67,8 @@ start:
 	@$(MAKE) start-frontend
 
 start-backend:
-	@echo "🐍 Starting Django backend..."
-	./venv/bin/python manage.py runserver
+	@echo "🐍 Starting Django backend with uv..."
+	uv run python manage.py runserver
 
 start-frontend:
 	@echo "⚛️  Starting React frontend..."
@@ -78,8 +85,8 @@ test: test-backend test-frontend
 	@echo "✅ All tests completed!"
 
 test-backend:
-	@echo "🧪 Running Django tests..."
-	./venv/bin/python manage.py test analytics
+	@echo "🧪 Running Django tests with uv..."
+	uv run python manage.py test analytics
 
 test-frontend:
 	@echo "🧪 Running React tests..."
@@ -87,29 +94,71 @@ test-frontend:
 
 # Database Operations
 migrate:
-	@echo "🗄️  Running database migrations..."
-	./venv/bin/python manage.py makemigrations
-	./venv/bin/python manage.py migrate
+	@echo "🗄️  Running database migrations with uv..."
+	uv run python manage.py makemigrations
+	uv run python manage.py migrate
 
 seed-data:
 	@echo "🌱 Generating sample event data..."
 	./venv/bin/python test_api.py
 
-# Code Quality
+# Code Quality & Linting
 lint: lint-backend lint-frontend
+	@echo "✅ All linting completed!"
+
+lint-fix: lint-backend-fix lint-frontend-fix
+	@echo "✅ All linting with fixes completed!"
 
 lint-backend:
-	@echo "🔍 Linting Python code..."
-	./venv/bin/python -m flake8 . --exclude=venv,node_modules,migrations --max-line-length=100 || echo "⚠️  flake8 not installed, skipping Python linting"
+	@echo "🔍 Linting Python code with uv..."
+	uv run flake8 .
+
+lint-backend-fix:
+	@echo "🔧 Linting and fixing Python code with uv..."
+	uv run black .
+	uv run isort .
 
 lint-frontend:
 	@echo "🔍 Linting React code..."
-	cd frontend && npm run lint || echo "✅ ESLint passed"
+	cd frontend && npm run lint
 
-format:
-	@echo "✨ Formatting code..."
-	./venv/bin/python -m black . --exclude="/(venv|node_modules|migrations)/" || echo "⚠️  black not installed, skipping Python formatting"
-	cd frontend && npx prettier --write src/**/*.{js,jsx,css,md} || echo "⚠️  prettier failed"
+lint-frontend-fix:
+	@echo "🔧 Linting and fixing React code..."
+	cd frontend && npm run lint:fix
+
+format: format-backend format-frontend
+	@echo "✅ All code formatted!"
+
+format-check: format-check-backend format-check-frontend
+	@echo "✅ Format check completed!"
+
+format-backend:
+	@echo "✨ Formatting Python code with uv..."
+	uv run black .
+	uv run isort .
+
+format-check-backend:
+	@echo "🔍 Checking Python code format with uv..."
+	uv run black . --check
+	uv run isort . --check-only
+
+format-frontend:
+	@echo "✨ Formatting React code..."
+	cd frontend && npm run format
+
+format-check-frontend:
+	@echo "🔍 Checking React code format..."
+	cd frontend && npm run format:check
+
+# Pre-commit hooks
+pre-commit: install-dev
+	@echo "🪝 Installing pre-commit hooks with uv..."
+	uv run pre-commit install
+	@echo "✅ Pre-commit hooks installed! They will run automatically on git commit."
+
+pre-commit-run:
+	@echo "🪝 Running pre-commit on all files with uv..."
+	uv run pre-commit run --all-files
 
 # Maintenance
 clean:
@@ -127,10 +176,10 @@ clean-deep: clean
 	rm -f db.sqlite3
 	@echo "✅ Deep cleanup complete"
 
-requirements:
-	@echo "📋 Updating requirements.txt..."
-	./venv/bin/pip freeze > requirements.txt
-	@echo "✅ Requirements updated"
+lock:
+	@echo "🔒 Updating uv.lock file..."
+	uv lock
+	@echo "✅ Dependencies locked"
 
 # Docker Operations
 docker-build:
@@ -148,8 +197,8 @@ docker-down:
 
 # Development Utilities
 shell:
-	@echo "🐍 Opening Django shell..."
-	./venv/bin/python manage.py shell
+	@echo "🐍 Opening Django shell with uv..."
+	uv run python manage.py shell
 
 logs:
 	@echo "📋 Showing recent logs..."
@@ -167,7 +216,7 @@ status:
 	@[ -f db.sqlite3 ] && echo "✅ Database exists ($(shell du -h db.sqlite3 | cut -f1))" || echo "❌ Database not found"
 	@echo ""
 	@echo "Dependencies:"
-	@[ -d venv ] && echo "✅ Python virtual environment" || echo "❌ Virtual environment not found"
+	@[ -f uv.lock ] && echo "✅ Python dependencies (uv.lock found)" || echo "❌ Python dependencies not installed (run: make install)"
 	@[ -d frontend/node_modules ] && echo "✅ Node modules installed" || echo "❌ Node modules not found"
 
 # Quick Development Commands
@@ -175,16 +224,16 @@ dev: setup start
 	@echo "🎉 Development environment is ready!"
 
 quick-test:
-	@echo "⚡ Running quick tests..."
-	./venv/bin/python manage.py test analytics.test_models --verbosity=1
+	@echo "⚡ Running quick tests with uv..."
+	uv run python manage.py test analytics.test_models --verbosity=1
 
 api-test:
-	@echo "🔌 Testing API endpoints..."
-	./venv/bin/python test_api.py
+	@echo "🔌 Testing API endpoints with uv..."
+	uv run python test_api.py
 
 snake-test:
-	@echo "🐍 Testing Snake game analytics..."
-	./venv/bin/python test_snake_analytics.py
+	@echo "🐍 Testing Snake game analytics with uv..."
+	uv run python test_snake_analytics.py
 
 start-snake:
 	@echo "🐍 Starting Snake game server..."

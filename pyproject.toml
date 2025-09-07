@@ -1,0 +1,112 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "djangalytics"
+version = "0.1.0"
+description = "Full-stack Django and React event analytics platform"
+readme = "README.md"
+authors = [{name = "Djangalytics Contributors"}]
+license = {text = "MIT"}
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers", 
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9", 
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Framework :: Django :: 5.0",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "Django>=5.2.6",
+    "djangorestframework>=3.16.1",
+    "django-cors-headers>=4.7.0", 
+    "requests>=2.32.5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "flake8>=6.0.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "coverage>=7.0.0",
+    "pre-commit>=3.0.0",
+    "bandit>=1.7.0",
+    "pytest>=7.0.0",
+    "pytest-django>=4.5.0",
+]
+
+[project.urls]
+Repository = "https://github.com/andrewm4894/djangalytics"
+Documentation = "https://github.com/andrewm4894/djangalytics#readme"
+
+[tool.uv]
+dev-dependencies = [
+    "flake8>=6.0.0",
+    "black>=23.0.0", 
+    "isort>=5.12.0",
+    "coverage>=7.0.0",
+    "pre-commit>=3.0.0",
+    "bandit>=1.7.0",
+    "pytest>=7.0.0",
+    "pytest-django>=4.5.0",
+]
+
+[tool.black]
+line-length = 100
+target-version = ['py38']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | migrations
+  | node_modules
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 100
+known_django = "django"
+known_first_party = ["djangalytics", "analytics"]
+sections = ["FUTURE", "STDLIB", "DJANGO", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+skip = ["venv", "migrations", "node_modules"]
+skip_glob = ["**/migrations/*.py"]
+
+[tool.coverage.run]
+source = "."
+omit = [
+    "*/venv/*",
+    "*/migrations/*",
+    "*/node_modules/*", 
+    "manage.py",
+    "*/settings.py",
+    "*/wsgi.py",
+    "*/asgi.py", 
+    "*/tests/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if settings.DEBUG:",
+]
