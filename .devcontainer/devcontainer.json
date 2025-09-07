@@ -1,0 +1,87 @@
+{
+  "name": "Djangalytics Development Environment",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11-bullseye",
+  
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "18"
+    },
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/astral-sh/uv/install-uv:latest": {}
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.flake8",
+        "ms-python.black-formatter",
+        "ms-python.isort",
+        "bradlc.vscode-tailwindcss",
+        "esbenp.prettier-vscode",
+        "ms-vscode.vscode-eslint",
+        "ms-vscode.vscode-json",
+        "ms-toolsai.jupyter",
+        "ms-python.debugpy",
+        "formulahendry.auto-rename-tag",
+        "christian-kohler.path-intellisense",
+        "ms-vscode.live-server",
+        "humao.rest-client",
+        "gruntfuggly.todo-tree",
+        "pkief.material-icon-theme",
+        "github.github-vscode-theme"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.formatting.provider": "black",
+        "python.formatting.blackArgs": ["--line-length=100"],
+        "python.linting.enabled": true,
+        "python.linting.flake8Enabled": true,
+        "python.linting.pylintEnabled": false,
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.organizeImports": true
+        },
+        "files.associations": {
+          "*.html": "html"
+        },
+        "emmet.includeLanguages": {
+          "javascript": "javascriptreact"
+        },
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "workbench.colorTheme": "GitHub Dark",
+        "workbench.iconTheme": "material-icon-theme"
+      }
+    }
+  },
+
+  "forwardPorts": [3000, 8000, 8081, 8082],
+  "portsAttributes": {
+    "3000": {
+      "label": "React Frontend",
+      "onAutoForward": "notify"
+    },
+    "8000": {
+      "label": "Django Backend", 
+      "onAutoForward": "notify"
+    },
+    "8081": {
+      "label": "Snake Game",
+      "onAutoForward": "silent"
+    },
+    "8082": {
+      "label": "Flappy Hedgehog Game",
+      "onAutoForward": "silent"
+    }
+  },
+
+  "postCreateCommand": ".devcontainer/setup.sh",
+  "postStartCommand": ".devcontainer/start-services.sh",
+
+  "remoteUser": "vscode",
+  
+  "mounts": [
+    "source=${localWorkspaceFolder}/.devcontainer/welcome.md,target=/home/vscode/welcome.md,type=bind,consistency=cached"
+  ]
+}

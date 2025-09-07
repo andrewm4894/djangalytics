@@ -1,6 +1,12 @@
 # Djangalytics - Event Analytics Dashboard
 
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/andrewm4894/djangalytics)
+
 A full-stack Django and React application that mimics the core functionality of PostHog's analytics product. This project demonstrates event ingestion, storage, and visualization in a real-time dashboard with live demo games.
+
+## 🚀 Try it in 30 Seconds
+
+**Want to explore immediately?** Click the Codespaces badge above for a fully configured development environment with all services running automatically!
 
 ## Features
 
@@ -47,7 +53,19 @@ djangalytics/
 
 ## Quick Start
 
-The fastest way to get started is using our Makefile:
+### 🚀 GitHub Codespaces (Recommended)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/andrewm4894/djangalytics)
+
+**One-click setup**: Click the badge above for an instant development environment with:
+- ✅ All dependencies pre-installed (Python, Node.js, uv)
+- ✅ Database setup with sample data
+- ✅ All services auto-started (Django, React, demo games)
+- ✅ VS Code extensions configured
+- ✅ Development aliases and shortcuts
+
+### 💻 Local Development
+
+The fastest way to get started locally is using our Makefile:
 
 ```bash
 make help          # See all available commands
