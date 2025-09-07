@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line } from 'recharts';
 
-const Dashboard = () => {
+const Dashboard = ({ selectedProject }) => {
   const [stats, setStats] = useState({
     daily_stats: [],
     event_counts: [],
@@ -12,8 +12,25 @@ const Dashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [timeWindow, setTimeWindow] = useState(() => {
+    return localStorage.getItem('dashboardTimeWindow') || '24h';
+  });
+  const [freq, setFreq] = useState(() => {
+    return localStorage.getItem('dashboardFreq') || '5m';
+  });
 
   const colors = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+
+  // Handle time window and frequency changes with localStorage persistence
+  const handleTimeWindowChange = (newTimeWindow) => {
+    setTimeWindow(newTimeWindow);
+    localStorage.setItem('dashboardTimeWindow', newTimeWindow);
+  };
+
+  const handleFreqChange = (newFreq) => {
+    setFreq(newFreq);
+    localStorage.setItem('dashboardFreq', newFreq);
+  };
 
   // Helper functions for event formatting
   const getEventIcon = (eventName) => {
@@ -101,9 +118,11 @@ const Dashboard = () => {
   };
 
   const fetchStats = async () => {
+    if (!selectedProject) return;
+    
     try {
       setError(null);
-      const response = await axios.get('http://localhost:8000/api/stats/');
+      const response = await axios.get(`http://localhost:8000/api/stats/?api_key=${selectedProject.api_key}&time_window=${timeWindow}&freq=${freq}`);
       setStats(response.data);
     } catch (error) {
       setError('Failed to fetch analytics data: ' + (error.response?.data?.detail || error.message));
@@ -114,50 +133,87 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    fetchStats();
-    
-    // Auto-refresh every 5 seconds
-    const interval = setInterval(fetchStats, 5000);
-    return () => clearInterval(interval);
-  }, []);
+    if (selectedProject) {
+      setLoading(true);
+      fetchStats();
+      
+      // Auto-refresh every 5 seconds
+      const interval = setInterval(fetchStats, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [selectedProject, timeWindow, freq]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Transform daily stats for line chart
-  const dailyChartData = stats.daily_stats.reduce((acc, curr) => {
-    const existing = acc.find(item => item.date === curr.date);
+  // Transform stats for time series chart - group by time bucket
+  const timeSeriesData = stats.daily_stats.reduce((acc, curr) => {
+    const timeKey = curr.time_bucket || curr.date; // Fallback to date for compatibility
+    const existing = acc.find(item => item.time === timeKey);
     if (existing) {
       existing[curr.event_name] = curr.count;
       existing.total = (existing.total || 0) + curr.count;
     } else {
       acc.push({
-        date: curr.date,
+        time: timeKey,
         [curr.event_name]: curr.count,
         total: curr.count
       });
     }
     return acc;
-  }, []).sort((a, b) => new Date(a.date) - new Date(b.date));
+  }, []).sort((a, b) => new Date(a.time) - new Date(b.time));
 
-  // Transform event counts for pie chart
-  const pieChartData = stats.event_counts.map((item, index) => ({
-    name: item.event_name,
-    value: item.count,
-    fill: colors[index % colors.length]
-  }));
+  // Get unique event types for line colors
+  const eventTypes = [...new Set(stats.daily_stats.map(item => item.event_name))];
 
   if (loading) {
-    return <div className="loading">Loading analytics data...</div>;
+    return <div className="loading">Loading analytics data for {selectedProject?.name}...</div>;
   }
+
+  const hasData = stats.total_events > 0;
 
   return (
     <div className="dashboard">
       <div className="dashboard-header">
-        <h2>Analytics Dashboard</h2>
-        <div className="total-events">
-          Total Events: <strong>{stats.total_events}</strong>
+        <h2>Analytics Dashboard - {selectedProject?.name}</h2>
+        <div className="dashboard-controls">
+          <div className="control-group">
+            <label htmlFor="timeWindow">Time Window:</label>
+            <select 
+              id="timeWindow" 
+              value={timeWindow} 
+              onChange={(e) => handleTimeWindowChange(e.target.value)}
+              className="control-select"
+            >
+              <option value="1h">Last Hour</option>
+              <option value="6h">Last 6 Hours</option>
+              <option value="24h">Last 24 Hours</option>
+              <option value="7d">Last 7 Days</option>
+              <option value="30d">Last 30 Days</option>
+            </select>
+          </div>
+          
+          <div className="control-group">
+            <label htmlFor="freq">Frequency:</label>
+            <select 
+              id="freq" 
+              value={freq} 
+              onChange={(e) => handleFreqChange(e.target.value)}
+              className="control-select"
+            >
+              <option value="1m">1 Minute</option>
+              <option value="5m">5 Minutes</option>
+              <option value="15m">15 Minutes</option>
+              <option value="1h">1 Hour</option>
+              <option value="1d">1 Day</option>
+            </select>
+          </div>
+          
+          <div className="total-events">
+            Total Events: <strong>{stats.total_events}</strong>
+          </div>
+          
+          <button onClick={fetchStats} className="refresh-btn">
+            Refresh Data
+          </button>
         </div>
-        <button onClick={fetchStats} className="refresh-btn">
-          Refresh Data
-        </button>
       </div>
 
       {error && (
@@ -166,87 +222,67 @@ const Dashboard = () => {
         </div>
       )}
 
-      <div className="charts-container">
-        {/* Event Counts Bar Chart */}
-        <div className="chart-section">
-          <h3>Event Types Distribution</h3>
-          {stats.event_counts.length > 0 ? (
-            <BarChart width={500} height={300} data={stats.event_counts}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="event_name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="count" fill="#8884d8" />
-            </BarChart>
-          ) : (
-            <p>No event data available</p>
-          )}
+      {!hasData && (
+        <div className="empty-state">
+          <div className="empty-state-icon">📊</div>
+          <h3>No Analytics Data Yet</h3>
+          <p>This project hasn't received any events yet.</p>
+          <p className="empty-state-subtitle">
+            Start sending events from your applications to see analytics data here.
+          </p>
         </div>
+      )}
 
-        {/* Daily Trends Line Chart */}
-        <div className="chart-section">
-          <h3>Daily Event Trends (Last 7 Days)</h3>
-          {dailyChartData.length > 0 ? (
-            <LineChart width={500} height={300} data={dailyChartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="total" stroke="#8884d8" />
-            </LineChart>
-          ) : (
-            <p>No daily trend data available</p>
-          )}
-        </div>
-
-        {/* Event Types Pie Chart */}
-        <div className="chart-section">
-          <h3>Event Types Breakdown</h3>
-          {pieChartData.length > 0 ? (
-            <PieChart width={400} height={300}>
-              <Pie
-                data={pieChartData}
-                cx={200}
-                cy={150}
-                labelLine={false}
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {pieChartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill} />
+      {hasData && (
+        <div className="chart-container">
+          <div className="chart-section">
+            <h3>Event Timeline</h3>
+            {timeSeriesData.length > 0 ? (
+              <LineChart width={1100} height={400} data={timeSeriesData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis 
+                  dataKey="time" 
+                  stroke="#666"
+                  fontSize={12}
+                />
+                <YAxis 
+                  stroke="#666"
+                  fontSize={12}
+                />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: '#fff',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    fontSize: '14px'
+                  }}
+                />
+                <Legend />
+                {eventTypes.map((eventType, index) => (
+                  <Line 
+                    key={eventType}
+                    type="monotone" 
+                    dataKey={eventType} 
+                    stroke={colors[index % colors.length]}
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
                 ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          ) : (
-            <p>No event breakdown data available</p>
-          )}
+              </LineChart>
+            ) : (
+              <div className="no-chart-data">
+                <p>No time series data available yet</p>
+                <p className="no-chart-subtitle">Events will appear here as they are received</p>
+              </div>
+            )}
+          </div>
         </div>
-
-        {/* Event Sources Bar Chart */}
-        <div className="chart-section">
-          <h3>Events by Source</h3>
-          {stats.source_counts && stats.source_counts.length > 0 ? (
-            <BarChart width={500} height={300} data={stats.source_counts}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="source" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="count" fill="#00C49F" />
-            </BarChart>
-          ) : (
-            <p>No source data available</p>
-          )}
-        </div>
-      </div>
+      )}
 
       {/* Live Feed */}
-      <div className="live-feed">
+      {hasData && (
+        <div className="live-feed">
         <div className="live-feed-header">
           <h3>🔴 Live Events Feed</h3>
           <div className="event-count-badge">
@@ -311,6 +347,7 @@ const Dashboard = () => {
           )}
         </div>
       </div>
+      )}
     </div>
   );
 };

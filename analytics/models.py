@@ -31,6 +31,7 @@ class Project(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
+    is_default = models.BooleanField(default=False, help_text='Default project for dashboard')
     
     class Meta:
         ordering = ['name']
@@ -48,6 +49,11 @@ class Project(models.Model):
             self.api_key = f"pk_{secrets.token_urlsafe(32)}"
         if not self.secret_key:
             self.secret_key = f"sk_{secrets.token_urlsafe(32)}"
+        
+        # Ensure only one default project
+        if self.is_default:
+            Project.objects.filter(is_default=True).update(is_default=False)
+        
         super().save(*args, **kwargs)
     
     def is_source_allowed(self, source):

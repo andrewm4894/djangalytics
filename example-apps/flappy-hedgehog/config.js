@@ -3,7 +3,7 @@
  */
 const ANALYTICS_CONFIG = {
     API_BASE_URL: 'http://localhost:8000/api',
-    API_KEY: 'pk_PNJYbjX44sGzb6DoeqDAgpoYlPGNyJJs8yEkeP1_3so',
+    API_KEY: 'pk_flappy_demo_key_12345678901234567890123',
     SOURCE_NAME: 'flappy-hedgehog',
     
     // Sampling rate for high-frequency events (0.0 to 1.0)

@@ -76,3 +76,9 @@ class EventCreateSerializer(serializers.ModelSerializer):
         
         event = Event.objects.create(project=project, **validated_data)
         return event
+
+class ProjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Project
+        fields = ['id', 'name', 'slug', 'api_key', 'allowed_sources', 'rate_limit_per_minute', 'is_active', 'is_default', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'slug', 'api_key', 'created_at', 'updated_at']
