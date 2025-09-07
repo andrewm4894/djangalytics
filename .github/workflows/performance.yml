@@ -1,0 +1,143 @@
+name: Performance Monitoring
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run performance tests weekly
+    - cron: '0 2 * * 1'
+
+jobs:
+  backend-performance:
+    name: Backend Performance Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        version: "latest"
+    
+    - name: Set up Python
+      run: uv python install 3.11
+    
+    - name: Install dependencies
+      run: uv sync --dev
+    
+    - name: Run database migrations
+      run: uv run python manage.py migrate
+    
+    - name: Generate test data
+      run: |
+        uv run python -c "
+        import os
+        import django
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'djangalytics.settings')
+        django.setup()
+        
+        from analytics.models import Project, Event
+        from django.utils import timezone
+        import random
+        
+        # Create test project
+        project = Project.objects.create(name='Performance Test')
+        
+        # Create test events for performance testing
+        events = []
+        for i in range(1000):
+            events.append(Event(
+                project=project,
+                event_name=f'test_event_{i % 10}',
+                source='performance_test',
+                properties={'test_id': i, 'value': random.randint(1, 100)}
+            ))
+        Event.objects.bulk_create(events)
+        print(f'Created {len(events)} test events')
+        "
+    
+    - name: Run performance benchmarks
+      run: |
+        uv run python -c "
+        import os
+        import django
+        import time
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'djangalytics.settings')
+        django.setup()
+        
+        from analytics.models import Project, Event
+        from django.db.models import Count
+        
+        project = Project.objects.first()
+        
+        # Test event creation performance
+        start = time.time()
+        for i in range(100):
+            Event.objects.create(
+                project=project,
+                event_name='perf_test',
+                source='benchmark'
+            )
+        creation_time = time.time() - start
+        
+        # Test query performance
+        start = time.time()
+        stats = Event.objects.filter(project=project).values('event_name').annotate(count=Count('id'))[:10]
+        list(stats)  # Force evaluation
+        query_time = time.time() - start
+        
+        print(f'Event creation: {creation_time:.3f}s for 100 events')
+        print(f'Stats query: {query_time:.3f}s')
+        
+        # Performance assertions
+        assert creation_time < 5.0, f'Event creation too slow: {creation_time:.3f}s'
+        assert query_time < 1.0, f'Stats query too slow: {query_time:.3f}s'
+        print('✅ Performance benchmarks passed')
+        "
+
+  frontend-performance:
+    name: Frontend Performance Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    
+    - name: Install dependencies
+      run: cd frontend && npm ci
+    
+    - name: Build for production
+      run: cd frontend && npm run build
+    
+    - name: Analyze bundle size
+      run: |
+        cd frontend
+        npx bundlesize
+        
+        # Check main bundle size
+        BUNDLE_SIZE=$(du -k build/static/js/*.js | sort -n | tail -1 | cut -f1)
+        echo "Main bundle size: ${BUNDLE_SIZE}KB"
+        
+        # Performance assertion (should be under 1MB)
+        if [ "$BUNDLE_SIZE" -gt 1024 ]; then
+          echo "❌ Bundle size too large: ${BUNDLE_SIZE}KB > 1MB"
+          exit 1
+        fi
+        
+        echo "✅ Bundle size within limits: ${BUNDLE_SIZE}KB"
+    
+    - name: Lighthouse Performance Test
+      uses: treosh/lighthouse-ci-action@v10
+      with:
+        configPath: ./frontend/lighthouserc.json
+        uploadArtifacts: true
+        temporaryPublicStorage: true
