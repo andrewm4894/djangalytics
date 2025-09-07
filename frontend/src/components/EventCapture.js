@@ -1,10 +1,16 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import ANALYTICS_CONFIG from '../config';
 
 const EventCapture = () => {
   const [eventName, setEventName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
+  
+  // Load config
+  const API_KEY = ANALYTICS_CONFIG.API_KEY;
+  const API_BASE_URL = ANALYTICS_CONFIG.API_BASE_URL;
+  const SOURCE_NAME = ANALYTICS_CONFIG.SOURCE_NAME;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -14,8 +20,10 @@ const EventCapture = () => {
     setMessage('');
 
     try {
-      await axios.post('http://localhost:8000/api/capture_event/', {
+      await axios.post(`${API_BASE_URL}/capture_event/`, {
         event_name: eventName,
+        api_key: API_KEY,
+        source: SOURCE_NAME,
         timestamp: new Date().toISOString()
       });
       
@@ -39,8 +47,10 @@ const EventCapture = () => {
   const handleQuickEvent = async (event) => {
     setIsLoading(true);
     try {
-      await axios.post('http://localhost:8000/api/capture_event/', {
+      await axios.post(`${API_BASE_URL}/capture_event/`, {
         event_name: event,
+        api_key: API_KEY,
+        source: SOURCE_NAME,
         timestamp: new Date().toISOString()
       });
       setMessage(`Event "${event}" captured!`);
