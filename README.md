@@ -1,14 +1,22 @@
 # Djangalytics - Event Analytics Dashboard
 
-A full-stack Django and React application that mimics the core functionality of PostHog's analytics product. This project demonstrates event ingestion, storage, and visualization in a real-time dashboard.
+A full-stack Django and React application that mimics the core functionality of PostHog's analytics product. This project demonstrates event ingestion, storage, and visualization in a real-time dashboard with live demo games.
 
 ## Features
 
+### 📊 Core Analytics
 - **Event Capture**: Capture custom events via REST API
-- **Real-time Dashboard**: View analytics with interactive charts
+- **Real-time Dashboard**: View analytics with interactive charts and modern UI
 - **Event Visualization**: Bar charts, line charts, and pie charts
-- **Live Feed**: Real-time stream of incoming events
+- **Live Events Feed**: Beautiful real-time stream with icons, badges, and animations
 - **Event Statistics**: Aggregated data by date and event type
+- **Project-based Analytics**: Multi-project support with API key authentication
+
+### 🎮 Demo Applications
+- **Snake Game**: Classic snake game with comprehensive analytics integration
+- **Flappy Hedgehog**: Flappy Bird-style game with hedgehog character
+- **Clean Game UI**: Modern side-panel layouts with responsive design
+- **Real-time Event Tracking**: Every game action generates analytics events
 
 ## Tech Stack
 
@@ -43,19 +51,23 @@ The fastest way to get started is using our Makefile:
 ```bash
 make help          # See all available commands
 make setup         # Install dependencies and set up the project
-make start         # Start both backend and frontend servers
+make start-all     # Start complete demo environment
 ```
 
-That's it! The application will be available at:
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8000
+That's it! The complete demo will be available at:
+- **📊 Analytics Dashboard**: http://localhost:3000
+- **🔧 Analytics Backend**: http://localhost:8000
+- **🐍 Snake Game**: http://localhost:8081
+- **🦔 Flappy Hedgehog**: http://localhost:8082
 
 ### Using Makefile Commands
 
 ```bash
 # Development
-make start         # Start both servers
-make stop          # Stop all servers
+make start         # Start backend and frontend only
+make start-all     # Start complete demo (analytics + games)
+make start-games   # Start just the demo games
+make stop-all      # Stop all services
 make status        # Check system status
 
 # Testing
@@ -254,16 +266,34 @@ The Docker setup includes:
 - Comprehensive test coverage for both backend and frontend
 - Makefile provides convenient development commands
 
+## 🚀 Demo Experience
+
+### Quick Demo Walkthrough:
+1. **Start everything**: `make start-all`
+2. **Open analytics dashboard**: http://localhost:3000
+3. **Play Snake game**: http://localhost:8081 - See events flow in real-time!
+4. **Play Flappy Hedgehog**: http://localhost:8082 - Watch your analytics grow!
+5. **Observe the dashboard**: Beautiful event feed with icons, colors, and animations
+
+### What You'll See:
+- 🚀 App opened events when games load
+- 🎮 Game started events with session data
+- 🍎 Food eaten events (Snake) with scores
+- 🪶 Flap events (Hedgehog) with positions
+- 🏆 High score achievements with celebration data
+- 💀 Game over events with detailed performance metrics
+
 ## Extending the Project
 
 Consider adding:
-- User authentication
-- Event filtering and search
-- Custom date ranges
-- Export functionality
+- Multi-tenant dashboard with project switching
+- Advanced event filtering and search
+- Custom date ranges and time periods
+- Event funnel analysis
 - Real-time WebSocket updates
-- Database optimization for larger datasets
-- Custom event properties visualization
+- Event schema validation
+- A/B testing framework integration
+- Custom dashboard creation
 
 ## Learning Objectives
 

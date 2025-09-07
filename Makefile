@@ -14,6 +14,8 @@ help:
 	@echo "  start-backend  - Start Django development server"
 	@echo "  start-frontend - Start React development server"
 	@echo "  stop           - Stop all running servers"
+	@echo "  stop-games     - Stop game servers only"
+	@echo "  stop-all       - Stop all services (backend + frontend + games)"
 	@echo "  test           - Run all tests (backend + frontend)"
 	@echo "  test-backend   - Run Django tests only"
 	@echo "  test-frontend  - Run React tests only"
@@ -24,6 +26,9 @@ help:
 	@echo "  seed-data      - Generate sample event data"
 	@echo "  snake-test     - Test Snake game analytics integration"
 	@echo "  start-snake    - Start Snake game demo app"
+	@echo "  start-hedgehog - Start Flappy Hedgehog game demo app"
+	@echo "  start-games    - Start both games on separate ports"
+	@echo "  start-all      - Start analytics + frontend + both games"
 	@echo "  requirements   - Update requirements file"
 	@echo "  docker-build   - Build Docker images"
 	@echo "  docker-up      - Start with Docker Compose"
@@ -183,8 +188,46 @@ snake-test:
 
 start-snake:
 	@echo "🐍 Starting Snake game server..."
-	@echo "Snake game will be available at http://localhost:8080"
-	cd snake-game && python -m http.server 8080
+	@echo "Snake game will be available at http://localhost:8081"
+	cd example-apps/snake-game && python -m http.server 8081
+
+start-hedgehog:
+	@echo "🦔 Starting Flappy Hedgehog game server..."
+	@echo "Flappy Hedgehog game will be available at http://localhost:8082"
+	cd example-apps/flappy-hedgehog && python -m http.server 8082
+
+start-games:
+	@echo "🎮 Starting both games on separate ports..."
+	@echo "Snake game: http://localhost:8081"
+	@echo "Flappy Hedgehog: http://localhost:8082"
+	@echo "Press Ctrl+C to stop all games"
+	@$(MAKE) start-snake &
+	@sleep 2
+	@$(MAKE) start-hedgehog
+
+start-all:
+	@echo "🚀 Starting complete Djangalytics demo environment..."
+	@echo ""
+	@echo "Services will be available at:"
+	@echo "  📊 Analytics Backend:  http://localhost:8000"
+	@echo "  🖥️  Analytics Frontend: http://localhost:3000"
+	@echo "  🐍 Snake Game:         http://localhost:8081"
+	@echo "  🦔 Flappy Hedgehog:    http://localhost:8082"
+	@echo ""
+	@echo "Starting services..."
+	@$(MAKE) start-backend &
+	@sleep 3
+	@$(MAKE) start-frontend &
+	@sleep 3
+	@$(MAKE) start-games
+
+stop-games:
+	@echo "🛑 Stopping game servers..."
+	@pkill -f "python.*http.server.*808[12]" || true
+	@echo "✅ Game servers stopped"
+
+stop-all: stop stop-games
+	@echo "🛑 All services stopped"
 
 reset-db:
 	@echo "🔄 Resetting database..."

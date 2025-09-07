@@ -1,10 +1,10 @@
 # Djangalytics Architecture
 
-This document outlines the architecture, data flow, and technical design decisions for the Djangalytics event analytics platform.
+This document outlines the architecture, data flow, and technical design decisions for the Djangalytics event analytics platform with integrated demo games and project-based authentication.
 
 ## System Overview
 
-Djangalytics is a full-stack web application that captures, stores, and visualizes event data in real-time. It follows a modern web architecture with a REST API backend and a reactive frontend.
+Djangalytics is a full-stack web application that captures, stores, and visualizes event data in real-time. It follows a modern web architecture with a REST API backend, reactive frontend, and includes live demo games that showcase real-world analytics integration.
 
 ```mermaid
 graph TB
@@ -175,31 +175,69 @@ flowchart TD
 
 ## Database Schema
 
-### Event Model
+### Database Schema
 
 ```mermaid
 erDiagram
+    Project {
+        int id PK
+        varchar name
+        varchar slug UK
+        varchar api_key UK
+        varchar secret_key UK
+        json allowed_sources
+        int rate_limit_per_minute
+        datetime created_at
+        datetime updated_at
+        boolean is_active
+    }
+    
     Event {
         int id PK
+        int project_id FK
         varchar event_name
+        varchar source
         datetime timestamp
         json properties
+        text user_agent
+        inet ip_address
     }
     
-    Event ||--|| EventStats : aggregates_to
-    
-    EventStats {
-        varchar event_name
-        date date
-        int count
+    ProjectRateLimit {
+        int id PK
+        int project_id FK
+        datetime minute_bucket
+        int request_count
     }
+    
+    Project ||--o{ Event : "has many"
+    Project ||--o{ ProjectRateLimit : "tracks"
 ```
+
+**Project Table Structure:**
+- `id`: Primary key (auto-increment)
+- `name`: Human-readable project name
+- `slug`: URL-friendly identifier (unique)
+- `api_key`: Public API key for authentication (pk_...)
+- `secret_key`: Secret key for server-side use (sk_...)
+- `allowed_sources`: JSON array of allowed source names
+- `rate_limit_per_minute`: Max events per minute (default: 1000)
 
 **Event Table Structure:**
 - `id`: Primary key (auto-increment)
+- `project_id`: Foreign key to Project (required)
 - `event_name`: String field (max 100 chars) - the type of event
+- `source`: Source application (e.g., "snake-game", "flappy-hedgehog")
 - `timestamp`: DateTime field with auto-generated timestamp
-- `properties`: JSON field for additional event metadata (optional)
+- `properties`: JSON field for additional event metadata
+- `user_agent`: Browser/client information
+- `ip_address`: Client IP for analytics/security
+
+**ProjectRateLimit Table Structure:**
+- `id`: Primary key (auto-increment)
+- `project_id`: Foreign key to Project
+- `minute_bucket`: Datetime rounded to minute (for rate limiting)
+- `request_count`: Number of requests in that minute
 
 ## API Design
 
@@ -346,13 +384,15 @@ graph TB
 ## Security Considerations
 
 ### CORS Configuration
-- Configured to allow `localhost:3000` in development
-- Should be restricted to specific domains in production
+- **Allow All Origins**: Following industry standard for analytics services
+- Similar approach to Google Analytics, Mixpanel, Segment
+- Security handled via project API key authentication instead of origin restrictions
 
 ### API Security
-- Currently uses `AllowAny` permissions (development)
-- Production should implement authentication/authorization
-- Consider rate limiting for event capture endpoint
+- **Project-based Authentication**: API keys required for event capture
+- **Rate Limiting**: Per-project rate limits prevent abuse
+- **Source Validation**: Projects can restrict allowed source applications
+- **Input Validation**: Django REST Framework serializers handle validation
 
 ### Data Validation
 - Django REST Framework serializers handle input validation
@@ -425,4 +465,78 @@ graph TD
 - Advanced analytics and ML insights
 - Multi-tenant support
 
-This architecture provides a solid foundation for an analytics platform while maintaining simplicity and clarity for learning purposes.
+## Demo Games Architecture
+
+### Game Integration
+```mermaid
+graph TB
+    subgraph "Demo Games"
+        A[Snake Game - Port 8081]
+        B[Flappy Hedgehog - Port 8082]
+    end
+    
+    subgraph "Analytics System"
+        C[Django API - Port 8000]
+        D[React Dashboard - Port 3000]
+    end
+    
+    A -->|Analytics Events| C
+    B -->|Analytics Events| C
+    C --> D
+    
+    subgraph "Events Generated"
+        E[🚀 app_opened]
+        F[🎮 game_started]
+        G[🍎 food_eaten]
+        H[🪶 hedgehog_flap]
+        I[🏆 pipe_passed]
+        J[💀 game_over]
+    end
+```
+
+### Game Event Integration
+Both demo games showcase comprehensive analytics integration:
+
+**Snake Game Events:**
+- `app_opened`: When game loads with browser/screen data
+- `game_started`: When player starts new game
+- `direction_changed`: When snake changes direction (sampled)
+- `food_eaten`: When snake eats food with score data
+- `game_paused`/`game_resumed`: Pause state changes
+- `game_over`: End game with performance metrics
+- `high_score_achieved`: New high score celebrations
+- `tab_hidden`/`tab_visible`: Browser visibility tracking
+- `page_unload`: When user leaves the game
+
+**Flappy Hedgehog Events:**
+- `app_opened`: Game initialization with environment data
+- `game_started`: New game with starting conditions
+- `hedgehog_flap`: Flap actions with position data (sampled)
+- `pipe_passed`: Successfully passing pipes with scores
+- `game_over`: Detailed end-game analytics
+- `high_score_achieved`: High score tracking
+- Browser visibility and lifecycle events
+
+### Multi-Service Development
+```mermaid
+graph TB
+    subgraph "Development Ports"
+        A[Analytics API<br/>:8000] 
+        B[React Dashboard<br/>:3000]
+        C[Snake Game<br/>:8081]
+        D[Flappy Hedgehog<br/>:8082]
+    end
+    
+    subgraph "Makefile Commands"
+        E[make start-all]
+        F[make start-games]
+        G[make stop-all]
+    end
+    
+    E --> A
+    E --> B
+    E --> C
+    E --> D
+```
+
+This architecture provides a solid foundation for an analytics platform while maintaining simplicity and clarity for learning purposes. The integrated demo games showcase real-world analytics implementation patterns used by major gaming and web platforms.
