@@ -197,12 +197,19 @@ def check_ip_rate_limit(request, limit_per_minute=100):
         rate_limit, created = IPRateLimit.objects.get_or_create(
             ip_address=ip_address,
             minute_bucket=minute_bucket,
-            defaults={'request_count': 0}
+            defaults={'request_count': 1}
         )
         
-        # Increment the count
-        rate_limit.request_count += 1
-        rate_limit.save()
+        if not created:
+            # Atomically increment the count using F() expression
+            from django.db.models import F
+            IPRateLimit.objects.filter(
+                ip_address=ip_address,
+                minute_bucket=minute_bucket
+            ).update(request_count=F('request_count') + 1)
+            
+            # Refresh the object to get the updated count
+            rate_limit.refresh_from_db()
         
         # Check if over limit
         is_allowed = rate_limit.request_count <= limit_per_minute
@@ -234,12 +241,19 @@ def check_project_rate_limit(project, limit_per_minute=None):
         rate_limit, created = ProjectRateLimit.objects.get_or_create(
             project=project,
             minute_bucket=minute_bucket,
-            defaults={'request_count': 0}
+            defaults={'request_count': 1}
         )
         
-        # Increment the count
-        rate_limit.request_count += 1
-        rate_limit.save()
+        if not created:
+            # Atomically increment the count using F() expression
+            from django.db.models import F
+            ProjectRateLimit.objects.filter(
+                project=project,
+                minute_bucket=minute_bucket
+            ).update(request_count=F('request_count') + 1)
+            
+            # Refresh the object to get the updated count
+            rate_limit.refresh_from_db()
         
         # Check if over limit
         is_allowed = rate_limit.request_count <= limit_per_minute

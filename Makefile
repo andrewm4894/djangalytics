@@ -99,8 +99,10 @@ migrate:
 	uv run python manage.py migrate
 
 seed-data:
+	@echo "🌱 Setting up demo projects..."
+	uv run python manage.py setup_projects
 	@echo "🌱 Generating sample event data..."
-	./venv/bin/python test_api.py
+	uv run python manage.py seed_events
 
 # Code Quality & Linting
 lint: lint-backend lint-frontend
