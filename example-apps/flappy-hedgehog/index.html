@@ -4,22 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flappy Hedgehog - Djangalytics Demo</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIGZpbGw9IiMwMDAwMDAiLz4KICA8IS0tIEhlZGdlaG9nIGJvZHkgLS0+CiAgPHJlY3QgeD0iOCIgeT0iMTQiIHdpZHRoPSI4IiBoZWlnaHQ9IjYiIGZpbGw9IiMwMEZGRkYiIHN0cm9rZT0iIzAwODhBQSIgc3Ryb2tlLXdpZHRoPSIxIi8+CiAgPCEtLSBIZWRnZWhvZyBzcGlrZXMgLS0+CiAgPHJlY3QgeD0iMTAiIHk9IjEyIiB3aWR0aD0iMiIgaGVpZ2h0PSIzIiBmaWxsPSIjMDBBQUFBIi8+CiAgPHJlY3QgeD0iMTIiIHk9IjEyIiB3aWR0aD0iMiIgaGVpZ2h0PSIzIiBmaWxsPSIjMDBBQUFBIi8+CiAgPCEtLSBIZWRnZWhvZyBmYWNlIC0tPgogIDxyZWN0IHg9IjEzIiB5PSIxNiIgd2lkdGg9IjMiIGhlaWdodD0iMyIgZmlsbD0iI0ZGRkZGRiIvPgogIDwhLS0gRXllIC0tPgogIDxyZWN0IHg9IjE0IiB5PSIxNyIgd2lkdGg9IjEiIGhlaWdodD0iMSIgZmlsbD0iIzAwMDAwMCIvPgogIDwhLS0gUGlwZXMgLS0+CiAgPHJlY3QgeD0iMjQiIHk9IjQiIHdpZHRoPSI0IiBoZWlnaHQ9IjEyIiBmaWxsPSIjMDBGRkZGIiBzdHJva2U9IiMwMDg4QUEiIHN0cm9rZS13aWR0aD0iMSIvPgogIDxyZWN0IHg9IjI0IiB5PSIyMCIgd2lkdGg9IjQiIGhlaWdodD0iOCIgZmlsbD0iIzAwRkZGRiIgc3Ryb2tlPSIjMDA4OEFBIiBzdHJva2Utd2lkdGg9IjEiLz4KPC9zdmc+">
     <style>
         body {
             margin: 0;
-            padding: 0;
-            background: linear-gradient(135deg, #4CAF50 0%, #8BC34A 50%, #FFC107 100%);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: white;
+            padding: 10px;
+            background: #000000;
+            font-family: 'Courier New', 'Monaco', 'Lucida Console', monospace;
+            color: #00FFFF;
             height: 100vh;
             overflow: hidden;
             display: flex;
+            box-sizing: border-box;
         }
 
         .main-container {
             display: flex;
             width: 100%;
-            height: 100vh;
+            height: 100%;
+            border: 2px solid #00FFFF;
+            background: #000000;
         }
 
         .game-area {
@@ -29,262 +33,223 @@
             align-items: center;
             justify-content: center;
             position: relative;
+            padding: 10px;
+            border-right: 1px solid #00FFFF;
         }
 
         .side-panel {
-            width: 280px;
-            background: rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(10px);
-            border-left: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 20px;
+            width: 300px;
+            background: #000000;
+            border-left: 1px solid #00FFFF;
+            padding: 10px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 10px;
             overflow-y: auto;
+            font-size: 12px;
         }
 
         .game-title {
             position: absolute;
-            top: 20px;
+            top: 10px;
             left: 50%;
             transform: translateX(-50%);
             text-align: center;
             z-index: 10;
+            font-size: 14px;
         }
 
         .game-title h1 {
-            font-size: 2.2em;
+            font-size: 20px;
             margin: 0;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+            color: #00FFFF;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
         }
 
         .game-title .subtitle {
-            color: #2E7D32;
+            color: #0088AA;
             margin: 5px 0 0 0;
-            font-size: 1em;
-            font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            font-size: 12px;
+            font-weight: normal;
         }
 
         .canvas-container {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 10px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: #000000;
+            border: 2px solid #00FFFF;
+            padding: 4px;
         }
 
         #gameCanvas {
-            border: 3px solid #2E7D32;
-            border-radius: 10px;
-            background: linear-gradient(180deg, #87CEEB 0%, #98FB98 100%);
-            box-shadow: 0 0 20px rgba(46, 125, 50, 0.3);
+            border: 1px solid #0088AA;
+            background: #000000;
             display: block;
         }
 
         .panel-section {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            padding: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: #000000;
+            border: 1px solid #00FFFF;
+            padding: 8px;
+            margin-bottom: 5px;
         }
 
         .panel-section h3 {
-            margin: 0 0 10px 0;
-            color: #FFC107;
-            font-size: 1.1em;
-            text-align: center;
+            margin: 0 0 8px 0;
+            color: #00FFFF;
+            font-size: 12px;
+            text-align: left;
+            font-weight: bold;
+            border-bottom: 1px solid #0088AA;
+            padding-bottom: 2px;
         }
 
         .score-display {
-            text-align: center;
+            text-align: left;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
         }
 
         .score-item {
-            margin: 8px 0;
-            font-size: 1.1em;
-            font-weight: bold;
+            margin: 4px 0;
+            font-size: 11px;
         }
 
         .current-score {
-            color: #4CAF50;
-            font-size: 1.3em;
+            color: #00FFFF;
         }
 
         .high-score {
-            color: #FFC107;
+            color: #FFFF00;
         }
 
         .status-display {
             text-align: center;
-            font-size: 1em;
-            font-weight: bold;
-            margin: 10px 0;
-            padding: 8px;
-            border-radius: 8px;
-            background: rgba(0, 0, 0, 0.2);
+            font-size: 11px;
+            margin: 5px 0;
+            padding: 4px;
+            border: 1px solid #0088AA;
+            background: #000000;
+            color: #00FFFF;
         }
 
         .control-item {
-            margin: 8px 0;
-            font-size: 0.9em;
+            margin: 4px 0;
+            font-size: 10px;
             display: flex;
             align-items: center;
             gap: 8px;
+            color: #0088AA;
         }
 
         .control-key {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 4px 8px;
-            border-radius: 5px;
-            font-family: monospace;
+            background: #000000;
+            padding: 2px 6px;
+            border: 1px solid #0088AA;
+            font-family: 'Courier New', monospace;
             font-weight: bold;
-            min-width: 60px;
+            min-width: 40px;
             text-align: center;
+            color: #00FFFF;
+            font-size: 10px;
         }
 
         .game-over {
-            color: #ff6b6b;
+            color: #FF0000;
         }
 
         .playing {
-            color: #4CAF50;
+            color: #00FFFF;
         }
 
         .paused {
-            color: #FFC107;
+            color: #FFFF00;
         }
 
         .game-buttons {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 4px;
         }
 
         button {
-            background: linear-gradient(45deg, #4CAF50 0%, #8BC34A 100%);
-            color: white;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 20px;
-            font-size: 0.9em;
+            background: #000000;
+            color: #00FFFF;
+            border: 1px solid #00FFFF;
+            padding: 6px 12px;
+            font-size: 11px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
             width: 100%;
+            text-transform: uppercase;
         }
 
         button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            background: #0088AA;
+            color: #000000;
         }
 
         button:active {
-            transform: translateY(0);
+            background: #00FFFF;
+            color: #000000;
         }
 
         .analytics-status {
             position: fixed;
             top: 10px;
             right: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 15px;
-            font-size: 0.8em;
+            background: #000000;
+            color: #00FFFF;
+            padding: 4px 8px;
+            border: 1px solid #00FFFF;
+            font-size: 10px;
             z-index: 1000;
+            font-family: 'Courier New', monospace;
         }
 
         .analytics-success {
-            background: rgba(76, 175, 80, 0.8);
+            color: #00FFFF;
+            border-color: #00FFFF;
         }
 
         .analytics-error {
-            background: rgba(244, 67, 54, 0.8);
-        }
-
-        .mobile-toggle {
-            display: none;
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 50%;
-            font-size: 1.2em;
-            cursor: pointer;
-            z-index: 100;
-            width: 50px;
-            height: 50px;
+            color: #FF0000;
+            border-color: #FF0000;
         }
 
         @media (max-width: 768px) {
             .main-container {
                 flex-direction: column;
+                border: 1px solid #00FFFF;
             }
             
             .side-panel {
-                position: fixed;
-                top: 0;
-                right: -300px;
-                width: 280px;
-                height: 100vh;
-                z-index: 50;
-                transition: right 0.3s ease;
-                border-left: 1px solid rgba(255, 255, 255, 0.2);
-            }
-            
-            .side-panel.open {
-                right: 0;
-            }
-            
-            .mobile-toggle {
-                display: block;
+                width: 100%;
+                height: 150px;
+                border-left: none;
+                border-top: 1px solid #00FFFF;
+                font-size: 10px;
+                padding: 5px;
             }
             
             .game-area {
-                width: 100%;
-                padding: 10px;
+                border-right: none;
+                border-bottom: 1px solid #00FFFF;
             }
             
             .game-title h1 {
-                font-size: 1.8em;
+                font-size: 16px;
             }
             
             .game-title .subtitle {
-                font-size: 0.9em;
+                font-size: 10px;
             }
             
             #gameCanvas {
                 width: 90vw;
                 height: 60vh;
                 max-width: 350px;
-                max-height: 500px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .game-title h1 {
-                font-size: 1.5em;
-            }
-            
-            .game-title .subtitle {
-                font-size: 0.8em;
-            }
-            
-            #gameCanvas {
-                width: 95vw;
-                height: 55vh;
-                max-width: 300px;
-                max-height: 400px;
-            }
-            
-            .side-panel {
-                width: 250px;
-                padding: 15px;
+                max-height: 300px;
             }
         }
     </style>
@@ -293,93 +258,59 @@
     <div class="main-container">
         <div class="game-area">
             <div class="game-title">
-                <h1>🦔 Flappy Hedgehog</h1>
-                <p class="subtitle">A Djangalytics Demo - Every flap is tracked!</p>
+                <h1>FLAPPY.EXE</h1>
+                <p class="subtitle">DJANGALYTICS DEMO v1.0</p>
             </div>
             
             <div class="canvas-container">
-                <canvas id="gameCanvas" width="350" height="500"></canvas>
+                <canvas id="gameCanvas" width="400" height="600"></canvas>
             </div>
         </div>
         
         <div class="side-panel">
             <div class="panel-section">
-                <h3>🎯 Score</h3>
+                <h3>[ SCORE ]</h3>
                 <div class="score-display">
-                    <div class="score-item current-score">Current: <span id="score">0</span></div>
-                    <div class="score-item high-score">Best: <span id="highScore">0</span></div>
+                    <div class="score-item current-score">PIPES: <span id="score">0000</span></div>
+                    <div class="score-item high-score">BEST: <span id="highScore">0000</span></div>
                 </div>
             </div>
             
             <div class="panel-section">
-                <h3>🎮 Status</h3>
-                <div class="status-display" id="gameStatus">Click or Press SPACE to Start</div>
+                <h3>[ STATUS ]</h3>
+                <div class="status-display" id="gameStatus">CLICK TO START</div>
             </div>
             
             <div class="panel-section">
-                <h3>⚡ Controls</h3>
+                <h3>[ ACTIONS ]</h3>
                 <div class="game-buttons">
-                    <button id="startBtn" onclick="startGame()">Start Game</button>
-                    <button id="pauseBtn" onclick="togglePause()">Pause</button>
-                    <button id="resetBtn" onclick="resetGame()">Reset</button>
+                    <button id="startBtn" onclick="startGame()">[S] START</button>
+                    <button id="pauseBtn" onclick="togglePause()">[P] PAUSE</button>
+                    <button id="resetBtn" onclick="resetGame()">[R] RESET</button>
                 </div>
             </div>
             
             <div class="panel-section">
-                <h3>🎮 How to Play</h3>
-                <div class="control-item">
-                    <span class="control-key">CLICK</span>
-                    <span>Flap wings</span>
+                <h3>[ TELEMETRY ]</h3>
+                <div style="font-size: 10px; line-height: 1.2; margin-bottom: 8px;">
+                    > FLIGHT ANALYTICS<br>
+                    > SESSION MONITORING
                 </div>
-                <div class="control-item">
-                    <span class="control-key">SPACE</span>
-                    <span>Flap wings</span>
-                </div>
-                <div class="control-item">
-                    <span class="control-key">P</span>
-                    <span>Pause/Resume</span>
-                </div>
-                <div class="control-item">
-                    <span class="control-key">R</span>
-                    <span>Restart game</span>
-                </div>
-            </div>
-            
-            <div class="panel-section">
-                <h3>📊 Analytics</h3>
-                <div style="font-size: 0.8em; line-height: 1.4;">
-                    Every flap, score, collision, and game event is tracked in real-time for analytics insights!
+                <div style="border-top: 1px solid #0088AA; padding-top: 4px;">
+                    <div style="font-size: 9px; color: #0088AA; margin-bottom: 2px;">EVENT LOG:</div>
+                    <div id="eventLog" style="font-size: 8px; line-height: 1.1; max-height: 120px; overflow-y: auto; font-family: 'Courier New', monospace; background: #000000; border: 1px solid #001122; padding: 2px;">
+                        AWAITING EVENTS...
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <button class="mobile-toggle" onclick="toggleSidePanel()">☰</button>
-
     <div id="analyticsStatus" class="analytics-status">
-        Analytics: Ready
+        ANALYTICS: READY
     </div>
 
     <script src="config.js"></script>
     <script src="flappy-hedgehog.js"></script>
-    <script>
-        function toggleSidePanel() {
-            const panel = document.querySelector('.side-panel');
-            panel.classList.toggle('open');
-        }
-        
-        // Close panel when clicking outside on mobile
-        document.addEventListener('click', (e) => {
-            const panel = document.querySelector('.side-panel');
-            const toggle = document.querySelector('.mobile-toggle');
-            
-            if (window.innerWidth <= 768 && 
-                !panel.contains(e.target) && 
-                !toggle.contains(e.target) && 
-                panel.classList.contains('open')) {
-                panel.classList.remove('open');
-            }
-        });
-    </script>
 </body>
 </html>
