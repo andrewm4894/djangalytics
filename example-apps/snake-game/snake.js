@@ -79,14 +79,12 @@ class SnakeGame {
             if (newDirection.x !== -this.direction.x || newDirection.y !== -this.direction.y) {
                 this.direction = newDirection;
                 
-                // Sample direction changes for analytics (10% of the time)
-                if (Math.random() < 0.1) {
-                    this.sendAnalyticsEvent('direction_changed', {
-                        new_direction: this.getDirectionName(newDirection),
-                        score: this.score,
-                        snake_length: this.snake.length
-                    });
-                }
+                // Track all direction changes for analytics
+                this.sendAnalyticsEvent('direction_changed', {
+                    new_direction: this.getDirectionName(newDirection),
+                    score: this.score,
+                    snake_length: this.snake.length
+                });
             }
         }
         
@@ -260,29 +258,52 @@ class SnakeGame {
     }
     
     draw() {
-        // Clear canvas
-        this.ctx.fillStyle = '#1a1a2e';
+        // Clear canvas - terminal black background
+        this.ctx.fillStyle = '#000000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // Draw snake
-        this.ctx.fillStyle = '#51cf66';
+        // Draw terminal-style grid (optional faint grid lines)
+        this.ctx.strokeStyle = '#002200';
+        this.ctx.lineWidth = 0.5;
+        for (let i = 0; i <= this.tileCount; i++) {
+            // Vertical lines
+            this.ctx.beginPath();
+            this.ctx.moveTo(i * this.gridSize, 0);
+            this.ctx.lineTo(i * this.gridSize, this.canvas.height);
+            this.ctx.stroke();
+            
+            // Horizontal lines
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, i * this.gridSize);
+            this.ctx.lineTo(this.canvas.width, i * this.gridSize);
+            this.ctx.stroke();
+        }
+        
+        // Draw snake - terminal green
         this.snake.forEach((segment, index) => {
             if (index === 0) {
-                // Head is brighter
-                this.ctx.fillStyle = '#40c057';
+                // Head - bright terminal green with border
+                this.ctx.fillStyle = '#00FF00';
+                this.ctx.fillRect(segment.x * this.gridSize + 1, segment.y * this.gridSize + 1, this.gridSize - 2, this.gridSize - 2);
+                // Head border
+                this.ctx.strokeStyle = '#00AA00';
+                this.ctx.lineWidth = 1;
+                this.ctx.strokeRect(segment.x * this.gridSize + 1, segment.y * this.gridSize + 1, this.gridSize - 2, this.gridSize - 2);
             } else {
-                this.ctx.fillStyle = '#51cf66';
+                // Body - dimmer green blocks
+                this.ctx.fillStyle = '#00AA00';
+                this.ctx.fillRect(segment.x * this.gridSize + 2, segment.y * this.gridSize + 2, this.gridSize - 4, this.gridSize - 4);
             }
-            this.ctx.fillRect(segment.x * this.gridSize, segment.y * this.gridSize, this.gridSize - 2, this.gridSize - 2);
         });
         
-        // Draw food
-        this.ctx.fillStyle = '#ff6b6b';
-        this.ctx.fillRect(this.food.x * this.gridSize, this.food.y * this.gridSize, this.gridSize - 2, this.gridSize - 2);
+        // Draw food - terminal style
+        this.ctx.fillStyle = '#00FF00';
+        this.ctx.fillRect(this.food.x * this.gridSize + 3, this.food.y * this.gridSize + 3, this.gridSize - 6, this.gridSize - 6);
         
-        // Add some shine to food
-        this.ctx.fillStyle = '#ff8e8e';
-        this.ctx.fillRect(this.food.x * this.gridSize + 2, this.food.y * this.gridSize + 2, 6, 6);
+        // Food border/indicator
+        this.ctx.strokeStyle = '#00FF00';
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeRect(this.food.x * this.gridSize + 1, this.food.y * this.gridSize + 1, this.gridSize - 2, this.gridSize - 2);
     }
     
     updateStatus(text) {
@@ -312,6 +333,9 @@ class SnakeGame {
             }
         };
         
+        // Log to telemetry display
+        this.logEventToDisplay(eventName, properties);
+        
         try {
             const response = await fetch(this.analyticsUrl, {
                 method: 'POST',
@@ -330,6 +354,44 @@ class SnakeGame {
             console.error('Analytics error:', error);
             this.updateAnalyticsStatus('❌ Analytics Error', 'analytics-error');
         }
+    }
+    
+    logEventToDisplay(eventName, properties = {}) {
+        const logElement = document.getElementById('eventLog');
+        const timestamp = new Date().toISOString().substring(11, 19); // HH:MM:SS
+        
+        // Create log entry
+        let logEntry = `${timestamp} > ${eventName.toUpperCase()}`;
+        
+        // Add key properties
+        const keyProps = [];
+        if (properties.score !== undefined) keyProps.push(`score=${properties.score}`);
+        if (properties.snake_length !== undefined) keyProps.push(`len=${properties.snake_length}`);
+        if (properties.final_score !== undefined) keyProps.push(`final=${properties.final_score}`);
+        if (properties.new_direction !== undefined) keyProps.push(`dir=${properties.new_direction}`);
+        if (properties.food_eaten !== undefined) keyProps.push(`eaten=${properties.food_eaten}`);
+        if (properties.new_high_score !== undefined) keyProps.push(`highscore=${properties.new_high_score}`);
+        
+        if (keyProps.length > 0) {
+            logEntry += ` [${keyProps.join(', ')}]`;
+        }
+        
+        // Clear "AWAITING EVENTS..." on first event
+        if (logElement.innerHTML.includes('AWAITING EVENTS')) {
+            logElement.innerHTML = '';
+        }
+        
+        // Add new entry
+        logElement.innerHTML += logEntry + '<br>';
+        
+        // Keep only last 20 entries
+        const lines = logElement.innerHTML.split('<br>').filter(line => line.trim());
+        if (lines.length > 20) {
+            logElement.innerHTML = lines.slice(-20).join('<br>') + '<br>';
+        }
+        
+        // Auto-scroll to bottom
+        logElement.scrollTop = logElement.scrollHeight;
     }
     
     updateAnalyticsStatus(message, className) {

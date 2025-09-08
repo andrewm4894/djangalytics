@@ -7,7 +7,7 @@ const ANALYTICS_CONFIG = {
     SOURCE_NAME: 'flappy-hedgehog',
     
     // Sampling rate for high-frequency events (0.0 to 1.0)
-    SAMPLE_RATE: 0.1, // 10% of hedgehog_flap events
+    SAMPLE_RATE: 1.0, // Track all flap events
     
     // Debug mode
     DEBUG: false

@@ -114,16 +114,14 @@ class FlappyHedgehogGame {
         this.hedgehog.velocity = this.jumpStrength;
         this.flapCount++;
         
-        // Send flap analytics every 5th flap to reduce noise
-        if (this.flapCount % 5 === 0) {
-            this.sendAnalyticsEvent('hedgehog_flap', {
-                flap_count: this.flapCount,
-                hedgehog_y: Math.round(this.hedgehog.y),
-                score: this.score,
-                velocity: this.hedgehog.velocity,
-                game_duration: Date.now() - this.gameStartTime
-            });
-        }
+        // Track every flap for analytics
+        this.sendAnalyticsEvent('hedgehog_flap', {
+            flap_count: this.flapCount,
+            hedgehog_y: Math.round(this.hedgehog.y),
+            score: this.score,
+            velocity: this.hedgehog.velocity,
+            game_duration: Date.now() - this.gameStartTime
+        });
     }
     
     startGame() {
@@ -343,53 +341,51 @@ class FlappyHedgehogGame {
     }
     
     draw() {
-        // Clear canvas with sky gradient
-        const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
-        gradient.addColorStop(0, '#87CEEB');
-        gradient.addColorStop(1, '#98FB98');
-        this.ctx.fillStyle = gradient;
+        // Clear canvas - terminal black background
+        this.ctx.fillStyle = '#000000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // Draw clouds
-        this.drawClouds();
+        // Draw terminal-style grid pattern (very subtle)
+        this.ctx.strokeStyle = '#001111';
+        this.ctx.lineWidth = 0.5;
+        for (let i = 0; i < this.canvas.width; i += 20) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(i, 0);
+            this.ctx.lineTo(i, this.canvas.height);
+            this.ctx.stroke();
+        }
         
-        // Draw pipes
-        this.ctx.fillStyle = '#4CAF50';
+        // Draw pipes - terminal cyan blocks
+        this.ctx.fillStyle = '#00FFFF';
         this.pipes.forEach(pipe => {
             this.ctx.fillRect(pipe.x, pipe.y, pipe.width, pipe.height);
             
-            // Add pipe highlight
-            this.ctx.fillStyle = '#66BB6A';
-            this.ctx.fillRect(pipe.x + 5, pipe.y + 5, pipe.width - 10, Math.min(pipe.height - 10, 20));
-            this.ctx.fillStyle = '#4CAF50';
+            // Pipe border for terminal effect
+            this.ctx.strokeStyle = '#0088AA';
+            this.ctx.lineWidth = 2;
+            this.ctx.strokeRect(pipe.x, pipe.y, pipe.width, pipe.height);
+            
+            // Inner pattern
+            this.ctx.fillStyle = '#0088AA';
+            for (let i = pipe.y; i < pipe.y + pipe.height; i += 8) {
+                this.ctx.fillRect(pipe.x + 2, i, pipe.width - 4, 2);
+            }
+            this.ctx.fillStyle = '#00FFFF';
         });
         
         // Draw hedgehog
         this.drawHedgehog();
         
-        // Draw ground
-        this.ctx.fillStyle = '#8BC34A';
+        // Draw ground - terminal style
+        this.ctx.fillStyle = '#00FFFF';
         this.ctx.fillRect(0, this.canvas.height - 10, this.canvas.width, 10);
+        this.ctx.strokeStyle = '#0088AA';
+        this.ctx.lineWidth = 1;
+        this.ctx.strokeRect(0, this.canvas.height - 10, this.canvas.width, 10);
     }
     
     drawClouds() {
-        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-        
-        // Simple cloud shapes
-        const cloudPositions = [
-            { x: 100, y: 100 },
-            { x: 300, y: 150 },
-            { x: 50, y: 200 },
-            { x: 350, y: 80 }
-        ];
-        
-        cloudPositions.forEach(cloud => {
-            this.ctx.beginPath();
-            this.ctx.arc(cloud.x, cloud.y, 15, 0, Math.PI * 2);
-            this.ctx.arc(cloud.x + 10, cloud.y, 20, 0, Math.PI * 2);
-            this.ctx.arc(cloud.x + 25, cloud.y, 15, 0, Math.PI * 2);
-            this.ctx.fill();
-        });
+        // No clouds in terminal mode - keep function for compatibility
     }
     
     drawHedgehog() {
@@ -398,35 +394,30 @@ class FlappyHedgehogGame {
         const w = this.hedgehog.width;
         const h = this.hedgehog.height;
         
-        // Hedgehog body (brown)
-        this.ctx.fillStyle = '#8D6E63';
-        this.ctx.beginPath();
-        this.ctx.ellipse(x + w/2, y + h/2, w/2, h/2, 0, 0, Math.PI * 2);
-        this.ctx.fill();
+        // Hedgehog body - terminal cyan block
+        this.ctx.fillStyle = '#00FFFF';
+        this.ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
         
-        // Hedgehog spikes
-        this.ctx.fillStyle = '#5D4037';
-        for (let i = 0; i < 5; i++) {
-            const spikeX = x + (i * 6) + 5;
+        // Body border
+        this.ctx.strokeStyle = '#0088AA';
+        this.ctx.lineWidth = 1;
+        this.ctx.strokeRect(x + 2, y + 2, w - 4, h - 4);
+        
+        // Simple terminal "spikes" - just rectangular blocks
+        this.ctx.fillStyle = '#00AAAA';
+        for (let i = 0; i < 3; i++) {
+            const spikeX = x + (i * 6) + 6;
             const spikeY = y - 2;
-            this.ctx.beginPath();
-            this.ctx.moveTo(spikeX, spikeY);
-            this.ctx.lineTo(spikeX + 3, spikeY - 5);
-            this.ctx.lineTo(spikeX + 6, spikeY);
-            this.ctx.fill();
+            this.ctx.fillRect(spikeX, spikeY, 4, 6);
         }
         
-        // Hedgehog face (lighter brown)
-        this.ctx.fillStyle = '#A1887F';
-        this.ctx.beginPath();
-        this.ctx.ellipse(x + w/2 + 5, y + h/2, w/3, h/2.5, 0, 0, Math.PI * 2);
-        this.ctx.fill();
+        // Simple "face" - just a smaller block
+        this.ctx.fillStyle = '#FFFFFF';
+        this.ctx.fillRect(x + w - 8, y + 4, 6, 6);
         
-        // Eye
+        // "Eye" - tiny black square
         this.ctx.fillStyle = '#000000';
-        this.ctx.beginPath();
-        this.ctx.arc(x + w/2 + 8, y + h/2 - 3, 2, 0, Math.PI * 2);
-        this.ctx.fill();
+        this.ctx.fillRect(x + w - 6, y + 5, 2, 2);
         
         // Eye highlight
         this.ctx.fillStyle = '#FFFFFF';
@@ -468,6 +459,9 @@ class FlappyHedgehogGame {
             }
         };
         
+        // Log to telemetry display
+        this.logEventToDisplay(eventName, properties);
+        
         try {
             const response = await fetch(this.analyticsUrl, {
                 method: 'POST',
@@ -486,6 +480,45 @@ class FlappyHedgehogGame {
             console.error('Analytics error:', error);
             this.updateAnalyticsStatus('❌ Analytics Error', 'analytics-error');
         }
+    }
+    
+    logEventToDisplay(eventName, properties = {}) {
+        const logElement = document.getElementById('eventLog');
+        const timestamp = new Date().toISOString().substring(11, 19); // HH:MM:SS
+        
+        // Create log entry
+        let logEntry = `${timestamp} > ${eventName.toUpperCase()}`;
+        
+        // Add key properties
+        const keyProps = [];
+        if (properties.score !== undefined) keyProps.push(`score=${properties.score}`);
+        if (properties.final_score !== undefined) keyProps.push(`final=${properties.final_score}`);
+        if (properties.flap_count !== undefined) keyProps.push(`flaps=${properties.flap_count}`);
+        if (properties.total_flaps !== undefined) keyProps.push(`total_flaps=${properties.total_flaps}`);
+        if (properties.new_high_score !== undefined) keyProps.push(`highscore=${properties.new_high_score}`);
+        if (properties.collision_type !== undefined) keyProps.push(`hit=${properties.collision_type}`);
+        if (properties.pipe_height !== undefined) keyProps.push(`pipe_h=${properties.pipe_height}`);
+        
+        if (keyProps.length > 0) {
+            logEntry += ` [${keyProps.join(', ')}]`;
+        }
+        
+        // Clear "AWAITING EVENTS..." on first event
+        if (logElement.innerHTML.includes('AWAITING EVENTS')) {
+            logElement.innerHTML = '';
+        }
+        
+        // Add new entry
+        logElement.innerHTML += logEntry + '<br>';
+        
+        // Keep only last 20 entries
+        const lines = logElement.innerHTML.split('<br>').filter(line => line.trim());
+        if (lines.length > 20) {
+            logElement.innerHTML = lines.slice(-20).join('<br>') + '<br>';
+        }
+        
+        // Auto-scroll to bottom
+        logElement.scrollTop = logElement.scrollHeight;
     }
     
     updateAnalyticsStatus(message, className) {
