@@ -44,7 +44,7 @@ jobs:
         uv run coverage xml
     
     - name: Upload coverage reports
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v5
       with:
         file: ./coverage.xml
         flags: backend
@@ -72,7 +72,7 @@ jobs:
       run: cd frontend && npm test -- --coverage --watchAll=false
     
     - name: Upload coverage reports
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v5
       with:
         file: ./frontend/coverage/lcov.info
         flags: frontend
