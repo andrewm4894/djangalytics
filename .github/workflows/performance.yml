@@ -136,7 +136,7 @@ jobs:
         echo "✅ Bundle size within limits: ${BUNDLE_SIZE}KB"
     
     - name: Lighthouse Performance Test
-      uses: treosh/lighthouse-ci-action@v10
+      uses: treosh/lighthouse-ci-action@v12
       with:
         configPath: ./frontend/lighthouserc.json
         uploadArtifacts: true
